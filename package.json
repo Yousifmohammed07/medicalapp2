@@ -5,5 +5,9 @@
     "@capacitor/android": "latest",
     "@capacitor/cli": "latest",
     "@capacitor/core": "latest"
+  },
+  "scripts": {
+    "build": "echo 'No build step required'",
+    "cap-add-android": "npx cap add android"
   }
 }
