@@ -1,135 +1,0 @@
-<!DOCTYPE html>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="firebase-config.js"></script>
-
-<script>
-    // التأكد من حالة المستخدم
-    firebase.auth().onAuthStateChanged((user) => {
-        if (!user) {
-            // إذا لم يكن مسجلاً، اطرده لصفحة تسجيل الدخول
-            window.location.href = "login.html";
-        }
-    });
-
-    function logout() {
-        firebase.auth().signOut().then(() => {
-            window.location.href = "login.html";
-        });
-    }
-</script>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css">
-    <title>إدارة الوقاية الإشعاعية - كاميرا طبية</title>
-</head>
-<body>
-    <nav>
-        <a href="admin_hub.html" class="logo">إدارة الوقاية 🛡️</a>
-        <button class="btn-primary" onclick="location.href='admin_hub.html'" style="width:auto; padding: 5px 15px;">⬅️ العودة</button>
-    </nav>
-
-    <div class="container">
-        <div class="card">
-            <h2 style="color:var(--orange); text-align:center;">➕ إضافة تعليمات وقاية جديدة</h2>
-            
-            <input type="text" id="prot-title" placeholder="عنوان الإجراء (مثلاً: قواعد دخول غرفة الـ CT)" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid var(--orange); background:transparent; color:white;">
-            
-            <select id="prot-cat" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; background:#001f3f; color:white; border:1px solid var(--orange);">
-                <option value="Staff">حماية الكادر (Occupational)</option>
-                <option value="Patient">حماية المريض (Patient Safety)</option>
-                <option value="Public">حماية الجمهور (Public)</option>
-            </select>
-
-            <textarea id="prot-desc" rows="5" placeholder="اكتب التعليمات واللوائح هنا..." style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--orange); background:transparent; color:white; margin-bottom:15px;"></textarea>
-
-            <label>صورة توضيحية أو بوستر:</label>
-            <input type="file" id="prot-img" accept="image/*" style="color:white; margin-bottom:15px;">
-            
-            <button class="btn-primary" onclick="saveProtection()">🚀 نشر التعليمات</button>
-        </div>
-
-        <div class="card">
-            <h3 style="color:var(--yellow);">📂 اللوائح المنشورة:</h3>
-            <div id="prot-list"></div>
-        </div>
-    </div>
-
-    <script>
-        async function saveProtection() {
-            const title = document.getElementById('prot-title').value;
-            const cat = document.getElementById('prot-cat').value;
-            const desc = document.getElementById('prot-desc').value;
-            const imgFile = document.getElementById('prot-img').files[0];
-
-            if(!title || !desc) return alert("يرجى ملء الحقول الأساسية");
-
-            let imageData = "";
-            if (imgFile) {
-                imageData = await new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onload = e => resolve(e.target.result);
-                    reader.readAsDataURL(imgFile);
-                });
-            }
-
-            const newItem = { id: Date.now(), title, cat, desc, img: imageData };
-            let data = JSON.parse(localStorage.getItem('rad_protection')) || [];
-            data.push(newItem);
-            localStorage.setItem('rad_protection', JSON.stringify(data));
-            
-            alert("تم حفظ التعليمات!");
-            location.reload();
-        }
-
-        window.onload = function() {
-            const list = document.getElementById('prot-list');
-            const data = JSON.parse(localStorage.getItem('rad_protection')) || [];
-            list.innerHTML = data.map((item, i) => `
-                <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
-                    <span><b>[${item.cat}]</b> ${item.title}</span>
-                    <button onclick="deleteProt(${i})" style="color:red; background:none; border:none; cursor:pointer;">حذف 🗑️</button>
-                </div>
-            `).join('');
-        };
-
-        function deleteProt(i) {
-            let data = JSON.parse(localStorage.getItem('rad_protection'));
-            data.splice(i, 1);
-            localStorage.setItem('rad_protection', JSON.stringify(data));
-            location.reload();
-        }
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<script src="firebase-config.js"></script>
-    
-    
-    
-    <script>
-    const COLLECTION = "protection"; // 💡 غيرها إلى us_lessons أو rad_protection حسب الصفحة
-
-    async function saveData() {
-        const title = document.querySelector('input').value;
-        const desc = document.querySelector('textarea').value;
-        
-        await db.collection(COLLECTION).add({
-            title, desc, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        location.reload();
-    }
-
-    // جلب البيانات للحذف
-    window.onload = async function() {
-        const snap = await db.collection(COLLECTION).orderBy("createdAt", "desc").get();
-        document.getElementById('data-list').innerHTML = snap.docs.map(doc => `
-            <div style="display:flex; justify-content:space-between; padding:10px;">
-                <span>${doc.data().title}</span>
-                <button onclick="db.collection('${COLLECTION}').doc('${doc.id}').delete().then(()=>location.reload())">حذف 🗑️</button>
-            </div>
-        `).join('');
-    };
-</script>
-</body>
-</html>
