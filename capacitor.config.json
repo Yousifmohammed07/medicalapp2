@@ -1,7 +1,7 @@
 {
   "appId": "com.medicalcamera.yousef",
   "appName": "Medical Camera",
-  "webDir": ".",
+  "webDir": "medical",
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https"
