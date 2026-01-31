@@ -1,302 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>كاميرا طبية - المنصة الشاملة</title>
-    <link rel="icon" type="image/png" href="logo.png">
-    <style>
-        .hero-section {
-            padding: 60px 20px;
-            text-align: center;
-            background: linear-gradient(rgba(0,31,63,0.8), rgba(0,31,63,0.8)), 
-                        url('https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=1000');
-            background-size: cover;
-            background-position: center;
-            border-bottom: 3px solid var(--orange);
-            margin-bottom: 30px;
-        }
-        
-        .main-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .feature-card {
-            background: var(--card-bg);
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            transition: 0.3s;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100%;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-10px);
-            border-color: var(--orange);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-        }
-
-        */
-        .logo-container {
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            gap: 10px;
-        }
-
-        .site-logo {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            padding: 20px;
-        }
-
-        .feature-card {
-            background: var(--card-bg);
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            border: 1px solid rgba(255, 215, 0, 0.15);
-            transition: 0.3s;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100%;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-10px);
-            border-color: var(--orange);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.6);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-        }
-
-        .welcome-text {
-            font-size: 2.5rem;
-            color: var(--yellow);
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-    </style>
-</head>
-<body>
-    <nav>
-        <a href="index.html" class="logo-container">
-            <img src="logo.png" alt="Logo" class="site-logo">
-            <span class="logo">كاميرا طبية</span>
-        </a>
-            <button onclick="toggleMenu()" class="dropbtn">القائمة ☰</button>
-            <div id="myDropdown" class="dropdown-content">
-                <a href="index.html">الرئيسية</a>
-                <a href="physics_calc.html">الحاسبة الفيزيائية 🧮</a>
-                <a href="contrast_guide.html">دليل الصبغات 🧪</a>
-                <a href="exam.html">مركز الاختبارات</a>
-                <a href="anatomy.html">تحدي التشريح</a>
-                <a href="anatomy_lessons.html">دروس التشريح 📖</a>
-                <a href="atlas.html">أطلس الوضعيات</a>
-                <a href="artifacts.html">مختبر الصور</a>
-                <a href="safety.html">تحدي السلامة</a>
-                <a href="ct.html">CT Scan</a>
-                <a href="xray.html">X-ray</a>
-                <a href="mri.html">MRI</a>
-                <a href="ultrasound.html">فيزياء السونار 🔊</a>
-                <a href="qc_lab.html">مختبر الرقابة النوعية 🛠️</a>
-                <a href="protection.html">الوقاية الإشعاعية 🛡️</a>
-                <a href="medical_terms.html">المصطلحات الطبية 📖</a>
-                <a href="physics_sim.html">محاكي الفيزياء ⚛️</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="hero-section">
-        <h1 class="welcome-text">مرحباً بك </h1>
-        <p style="font-size: 1.2rem; max-width: 800px; margin: 0 auto;">
-            منصتك المتكاملة لإتقان التصوير الطبي والعلاج الاشعاعي والطب النووي، دروس و اختبارات و تحديات.
-        </p>
-    </div>
-
-    <div class="container">
-        <div class="main-grid">
-            
-            <div class="feature-card">
-                <div class="feature-icon">🏆</div>
-                <h3>أكاديمية الاختبارات</h3>
-                <p>اختبر مهاراتك من خلال نظام المستويات اليدوي المطور والمزامنة السحابية.</p>
-                <a href="exam.html" class="btn-primary" style="text-decoration:none;">دخول الاختبارات</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">💀</div>
-                <h3>أطلس الوضعيات</h3>
-                <p>الموسوعة الشاملة لوضعيات التصوير الشعاعي ومعايير الجودة.</p>
-                <a href="atlas.html" class="btn-primary" style="text-decoration:none;">استكشاف الأطلس</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">🦴</div>
-                <h3>تحدي التشريح</h3>
-                <p>تحدي تحديد المعالم التشريحية الدقيقة على الصور الإشعاعية.</p>
-                <a href="anatomy.html" class="btn-primary" style="text-decoration:none;">ابدأ التحدي</a>
-            </div>
-
-            
-            <div class="feature-card" style="border-color: var(--yellow);">
-                <div class="feature-icon">📖</div>
-                <h3>دروس التشريح</h3>
-                <p>تعلم قراءة صور الأشعة والمفراس بشكل علمي ومفصل.</p>
-                <a href="anatomy_lessons.html" class="btn-primary">بدء التعلم</a>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🛡️</div>
-                <h3>تحدي السلامة المهنية</h3>
-                <p>فحص معرفتك بقواعد الوقاية الإشعاعية وسلامة الرنين والمفراس.</p>
-                <a href="safety.html" class="btn-primary" style="text-decoration:none;">فحص السلامة</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">🧮</div>
-                <h3>الحاسبة الفيزيائية</h3>
-                <p>أدوات متقدمة لحساب التربيع العكسي، HVL، والـ Pitch في المفراس.</p>
-                <a href="physics_calc.html" class="btn-primary" style="text-decoration:none;">فتح الحاسبة</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">☢️</div>
-                <h3>فيزياء الأشعة (X-ray)</h3>
-                <p>دروس متقدمة في إنتاج الأشعة وتفاعل الفوتونات مع المادة.</p>
-                <a href="xray.html" class="btn-primary" style="text-decoration:none;">تصفح الدروس</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">🌀</div>
-                <h3>المفراس الحلزوني (CT)</h3>
-                <p>تقنيات إعادة البناء، عوامل الجرعة، وبروتوكولات التصوير المقطعي.</p>
-                <a href="ct.html" class="btn-primary" style="text-decoration:none;">تصفح CT</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">🧲</div>
-                <h3>الرنين المغناطيسي (MRI)</h3>
-                <p>فيزياء التمغنط، تسلسلات النبض (Sequences)، والتحكم في الإشارة.</p>
-                <a href="mri.html" class="btn-primary" style="text-decoration:none;">تصفح MRI</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">🧪</div>
-                <h3>دليل المواد الملونة</h3>
-                <p>حاسبة eGFR وبروتوكولات استخدام صبغات اليود والجادولينيوم.</p>
-                <a href="contrast_guide.html" class="btn-primary" style="text-decoration:none;">دليل الصبغات</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">🔊</div>
-                <h3>فيزياء السونار</h3>
-                <p>مبادئ الموجات فوق الصوتية وتأثير دوبلر في التصوير الطبي.</p>
-                <a href="ultrasound.html" class="btn-primary" style="text-decoration:none;">دخول القسم</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">🖼️</div>
-                <h3>مختبر عيوب الصور</h3>
-                <p>تحليل العيوب التقنية (Artifacts) في الصور وكيفية معالجتها.</p>
-                <a href="artifacts.html" class="btn-primary" style="text-decoration:none;">دخول المختبر</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">🛠️</div>
-                <h3>الرقابة النوعية (QC)</h3>
-                <p>بروتوكولات معايرة الأجهزة وضمان جودة الأداء الإشعاعي.</p>
-                <a href="qc_lab.html" class="btn-primary" style="text-decoration:none;">مختبر الجودة</a>
-            </div>  
-
-            <div class="feature-card">
-                <div class="feature-icon">🛡️</div>
-                <h3>الوقاية الإشعاعية</h3>
-                <p>معايير الحماية للعاملين والمرضى وتقليل التعرض المهني.</p>
-                <a href="protection.html" class="btn-primary" style="text-decoration:none;">دليل الوقاية</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">⚛️</div>
-                <h3>محاكي الفيزياء</h3>
-                <p>تجارب افتراضية تفاعلية لفهم الظواهر الفيزيائية الإشعاعية.</p>
-                <a href="physics_sim.html" class="btn-primary" style="text-decoration:none;">فتح المحاكي</a>
-            </div>
-            
-            <div class="feature-card">
-     <div class="feature-icon">✍️</div>
-    <h3>قاموس المصطلحات</h3>
-    <p>دليلك لفهم اختصارات الأطباء ومصطلحات التصوير بالإنجليزي والعربي.</p>
-     <a href="terms2.html" class="btn-primary" style="text-decoration:none;"> تصفح المصطلحات</a>
-</div>
-            
-            <div class="feature-card">
-                <div class="feature-icon">📖</div>
-                <h3>المصطلحات الاشعاعية و الفيزيائية</h3>
-                <p>قاموس شامل للمصطلحات الإشعاعية والفيزيائية باللغتين العربية والإنجليزية.</p>
-                <a href="medical_terms.html" class="btn-primary" style="text-decoration:none;">القاموس</a>
-            </div>
-            
-        </div>
-    </div>
-
-    <footer style="text-align:center; padding: 30px; color: gray; font-size: 0.9rem;">
-        &copy; 2026 كاميرا طبية - تطوير يوسف محمد
-        
-          بكلوريوس فيزياء طبية جامعة الكرخ للعلوم
-    </footer>
-
-    <script src="script.js"></script>
-    <script>
-        function toggleMenu() {
-            document.getElementById("myDropdown").classList.toggle("show");
-        }
-        window.onclick = function(event) {
-            if (!event.target.matches('.dropbtn')) {
-                var dropdowns = document.getElementsByClassName("dropdown-content");
-                for (var i = 0; i < dropdowns.length; i++) {
-                    var openDropdown = dropdowns[i];
-                    if (openDropdown.classList.contains('show')) {
-                        openDropdown.classList.remove('show');
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="firebase-config.js"></script>
-    
-    <script>
-    // كود زيادة عداد الزوار تلقائياً عند دخول الموقع
-    window.addEventListener('load', function() {
-        const counterRef = db.collection("site_stats").doc("visitors");
-        
-        // زيادة العداد بمقدار 1 في السحاب
-        counterRef.set({
-            count: firebase.firestore.FieldValue.increment(1)
-        }, { merge: true });
-    });
-</script>
-</body>
-</html>
