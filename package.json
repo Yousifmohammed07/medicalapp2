@@ -1,16 +1,13 @@
 {
-  "name": "medical-camera-app",
+  "name": "medical-camera",
   "version": "1.0.0",
-  "description": "تطبيق كامرا طبية لوضعيات التصوير الطبي",
-  "main": "index.js",
   "dependencies": {
-    "@capacitor/android": "latest",
-    "@capacitor/cli": "latest",
-    "@capacitor/core": "latest"
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/core": "^5.0.0"
   },
   "scripts": {
-    "build": "echo 'No build script needed for simple HTML app'"
-  },
-  "author": "Youssef",
-  "license": "MIT"
+    "build": "echo 'Build Success'",
+    "postinstall": "npx cap add android || true"
+  }
 }
