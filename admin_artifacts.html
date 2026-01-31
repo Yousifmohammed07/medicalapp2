@@ -1,168 +1,0 @@
-<!DOCTYPE html>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="firebase-config.js"></script>
-
-<script>
-    // التأكد من حالة المستخدم
-    firebase.auth().onAuthStateChanged((user) => {
-        if (!user) {
-            // إذا لم يكن مسجلاً، اطرده لصفحة تسجيل الدخول
-            window.location.href = "login.html";
-        }
-    });
-
-    function logout() {
-        firebase.auth().signOut().then(() => {
-            window.location.href = "login.html";
-        });
-    }
-</script>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css">
-    <title>إدارة مختبر الأخطاء - كاميرا طبية</title>
-    <style>
-        .input-group { margin-bottom: 15px; }
-        input, textarea, select { 
-            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--orange); 
-            background: rgba(255,255,255,0.05); color: white; box-sizing: border-box; 
-        }
-        label { display: block; margin-bottom: 5px; color: var(--yellow); }
-    </style>
-</head>
-<body>
-    <nav>
-        <a href="admin_hub.html" class="logo">إدارة المختبر 🖼️</a>
-        <button class="btn-primary" onclick="location.href='admin_hub.html'" style="width:auto; padding: 5px 15px;">⬅️ العودة للمركز</button>
-    </nav>
-
-    <div class="container">
-        <div class="card">
-            <h2 style="color:var(--orange); text-align:center;">🔬 إضافة خطأ فيزيائي (Artifact) جديد</h2>
-            
-            <div class="input-group">
-                <label>نوع الجهاز (Modality):</label>
-                <select id="art-modality">
-                    <option value="MRI">الرنين المغناطيسي (MRI)</option>
-                    <option value="CT">المفراس (CT Scan)</option>
-                    <option value="X-ray">الأشعة السينية (X-ray)</option>
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label>اسم الخطأ (التشخيص الصحيح):</label>
-                <input type="text" id="art-title" placeholder="مثلاً: Chemical Shift Artifact">
-            </div>
-
-            <div class="input-group">
-                <label>صورة الخطأ (من الاستوديو):</label>
-                <input type="file" id="art-img" accept="image/*">
-            </div>
-
-            <div class="input-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                <div><label>خيار 1:</label><input type="text" id="opt-0"></div>
-                <div><label>خيار 2:</label><input type="text" id="opt-1"></div>
-                <div><label>خيار 3:</label><input type="text" id="opt-2"></div>
-            </div>
-
-            <div class="input-group">
-                <label>رقم الخيار الصحيح (0 أو 1 أو 2):</label>
-                <input type="number" id="correct-idx" min="0" max="2" value="0">
-            </div>
-
-            <div class="input-group">
-                <label>التفسير الفيزيائي وكيفية العلاج:</label>
-                <textarea id="art-exp" rows="4" placeholder="اشرح لماذا حدث هذا الخطأ وكيف يمكن للمصور تجنبه..."></textarea>
-            </div>
-            
-            <button class="btn-primary" onclick="saveArtifact()">🚀 إضافة للمختبر</button>
-        </div>
-
-        <div class="card">
-            <h2 style="color:var(--yellow);">📂 الأخطاء المضافة حالياً</h2>
-            <div id="artifacts-list"></div>
-        </div>
-    </div>
-
-    <script>
-        async function saveArtifact() {
-            const imgFile = document.getElementById('art-img').files[0];
-            const title = document.getElementById('art-title').value;
-            if(!imgFile || !title) return alert("يرجى رفع الصورة وكتابة الاسم!");
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const newArt = {
-                    id: Date.now(),
-                    modality: document.getElementById('art-modality').value,
-                    title: title,
-                    img: e.target.result,
-                    options: [
-                        document.getElementById('opt-0').value,
-                        document.getElementById('opt-1').value,
-                        document.getElementById('opt-2').value
-                    ],
-                    correct: parseInt(document.getElementById('correct-idx').value),
-                    explanation: document.getElementById('art-exp').value
-                };
-
-                let data = JSON.parse(localStorage.getItem('custom_artifacts')) || [];
-                data.push(newArt);
-                localStorage.setItem('custom_artifacts', JSON.stringify(data));
-                alert("تمت إضافة الخطأ بنجاح!");
-                location.reload();
-            };
-            reader.readAsDataURL(imgFile);
-        }
-
-        window.onload = function() {
-            const list = document.getElementById('artifacts-list');
-            const data = JSON.parse(localStorage.getItem('custom_artifacts')) || [];
-            list.innerHTML = data.map((art, i) => `
-                <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
-                    <span>[${art.modality}] ${art.title}</span>
-                    <button onclick="deleteArt(${i})" style="color:red; background:none; border:none; cursor:pointer;">حذف 🗑️</button>
-                </div>
-            `).join('');
-        };
-
-        function deleteArt(i) {
-            let data = JSON.parse(localStorage.getItem('custom_artifacts'));
-            data.splice(i, 1);
-            localStorage.setItem('custom_artifacts', JSON.stringify(data));
-            location.reload();
-        }
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<script src="firebase-config.js"></script>
-    
-    <script>
-    const COLLECTION = "artifacts"; // 💡 غيرها إلى us_lessons أو rad_protection حسب الصفحة
-
-    async function saveData() {
-        const title = document.querySelector('input').value;
-        const desc = document.querySelector('textarea').value;
-        
-        await db.collection(COLLECTION).add({
-            title, desc, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        location.reload();
-    }
-
-    // جلب البيانات للحذف
-    window.onload = async function() {
-        const snap = await db.collection(COLLECTION).orderBy("createdAt", "desc").get();
-        document.getElementById('data-list').innerHTML = snap.docs.map(doc => `
-            <div style="display:flex; justify-content:space-between; padding:10px;">
-                <span>${doc.data().title}</span>
-                <button onclick="db.collection('${COLLECTION}').doc('${doc.id}').delete().then(()=>location.reload())">حذف 🗑️</button>
-            </div>
-        `).join('');
-    };
-</script>
-</body>
-</html>
