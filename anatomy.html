@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>تحدي التشريح الإشعاعي - كاميرا طبية</title>
+    <style>
+        :root { --grad: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%); }
+        
+        .anatomy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 20px 0; }
+        
+        .challenge-card { 
+            background: #0a1120; border-radius: 20px; padding: 25px; text-align: center; 
+            border: 1px solid rgba(255, 215, 0, 0.1); cursor: pointer; transition: 0.3s;
+        }
+        .challenge-card:hover { transform: translateY(-5px); border-color: var(--orange); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        
+        #challenge-screen { display: none; max-width: 800px; margin: 0 auto; }
+        .image-container { position: relative; background: #000; border-radius: 20px; padding: 10px; margin-bottom: 20px; border: 2px solid #1e293b; }
+        .anatomy-img { width: 100%; max-height: 450px; object-fit: contain; border-radius: 15px; }
+        
+        /* علامة الإشارة على العضو المراد تحديده */
+        .marker {
+            position: absolute; width: 30px; height: 30px; border: 3px solid var(--yellow);
+            border-radius: 50%; background: rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 15px var(--orange); transform: translate(-50%, -50%);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.3); } 100% { transform: translate(-50%, -50%) scale(1); } }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 20px; }
+        .option-btn { 
+            padding: 18px; border-radius: 15px; border: 1px solid #1e293b;
+            background: #0f172a; color: white; cursor: pointer; text-align: right; font-size: 1.1rem; transition: 0.2s;
+        }
+        .option-btn:hover { background: #1e293b; border-color: var(--yellow); }
+        .option-btn.correct { background: #27ae60 !important; border-color: #2ecc71; }
+        .option-btn.wrong { background: #c0392b !important; border-color: #e74c3c; }
+
+        .feedback-area { margin-top: 20px; padding: 20px; border-radius: 15px; display: none; background: rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">أكاديمية التشريح 🦴</a>
+        <button class="btn-primary" onclick="location.href='index.html'" style="width:auto; padding: 5px 15px;">الرئيسية</button>
+    </nav>
+
+    <div class="container">
+        <div id="dashboard">
+            <header style="text-align:center; padding: 40px 0;">
+                <h1 style="color:var(--yellow)">تحدي التشريح الإشعاعي</h1>
+                <p>حدد المعالم التشريحية الصحيحة على صور الأشعة والمفراس</p>
+            </header>
+            <div id="sections-grid" class="anatomy-grid">
+                <p style="text-align:center; grid-column:1/-1;">جاري جلب التحديات من السحاب...</p>
+            </div>
+        </div>
+
+        <div id="challenge-screen">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                    <span id="score-text" style="color:var(--yellow)">النقاط: 0</span>
+                    <span id="q-counter" style="color:var(--orange)">السؤال: 1 / 5</span>
+                </div>
+
+                <div class="image-container">
+                    <img id="main-img" src="" class="anatomy-img">
+                    <div id="marker" class="marker"></div> </div>
+
+                <h3 id="question-prompt" style="text-align:center; margin-bottom:20px;">ما هو العضو المشار إليه بالعلامة؟</h3>
+
+                <div id="options-area" class="options-grid"></div>
+
+                <div id="feedback" class="feedback-area">
+                    <h4 id="res-status"></h4>
+                    <p id="res-note"></p>
+                </div>
+
+                <div style="margin-top:25px;">
+                    <button id="next-btn" class="btn-primary" style="display:none;" onclick="loadNextQuestion()">السؤال التالي ➡️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const COLLECTION = "anatomy_challenges";
+        let currentQuestions = [];
+        let currentIdx = 0;
+        let score = 0;
+
+        // 1. جلب التحديات المتاحة
+        async function loadSections() {
+            const grid = document.getElementById('sections-grid');
+            try {
+                const snap = await db.collection(COLLECTION).get();
+                if(snap.empty) {
+                    grid.innerHTML = "<p style='grid-column:1/-1; text-align:center;'>لا توجد تحديات حالياً. أضفها من لوحة الإدارة.</p>";
+                    return;
+                }
+                grid.innerHTML = snap.docs.map(doc => `
+                    <div class="challenge-card" onclick="startChallenge('${doc.id}')">
+                        <span style="font-size:3rem;">${doc.data().icon || '🦴'}</span>
+                        <h3 style="margin-top:15px; color:var(--yellow);">${doc.data().title}</h3>
+                        <p style="font-size:0.9rem; color:#aaa;">تحدي ${doc.data().questions?.length || 0} معالم تشريحية</p>
+                    </div>
+                `).join('');
+            } catch (e) { grid.innerHTML = "خطأ في الاتصال بالسحاب."; }
+        }
+
+        // 2. بدء تحدي معين
+        async function startChallenge(id) {
+            const doc = await db.collection(COLLECTION).doc(id).get();
+            currentQuestions = doc.data().questions || [];
+            if(currentQuestions.length === 0) return alert("هذا القسم لا يحتوي على أسئلة.");
+
+            currentIdx = 0; score = 0;
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('challenge-screen').style.display = 'block';
+            displayQuestion();
+        }
+
+        // 3. عرض السؤال الحالي
+        function displayQuestion() {
+            const q = currentQuestions[currentIdx];
+            document.getElementById('q-counter').innerText = `السؤال: ${currentIdx + 1} / ${currentQuestions.length}`;
+            document.getElementById('main-img').src = q.img;
+            
+            // وضع العلامة (Marker) في المكان الصحيح بناءً على الإحداثيات المخزنة
+            const marker = document.getElementById('marker');
+            marker.style.top = q.posY + "%";
+            marker.style.left = q.posX + "%";
+
+            const optionsArea = document.getElementById('options-area');
+            optionsArea.innerHTML = q.options.map((opt, i) => `
+                <button class="option-btn" onclick="checkAnswer(${i})" id="opt-${i}">${opt}</button>
+            `).join('');
+
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        // 4. التحقق من الإجابة
+        function checkAnswer(idx) {
+            const q = currentQuestions[currentIdx];
+            const feedback = document.getElementById('feedback');
+            const btns = document.querySelectorAll('.option-btn');
+            
+            btns.forEach(btn => btn.style.pointerEvents = 'none');
+
+            if(idx === q.correct) {
+                score += 10;
+                document.getElementById(`opt-${idx}`).classList.add('correct');
+                document.getElementById('res-status').innerText = "✔️ أحسنت! إجابة صحيحة";
+                document.getElementById('res-status').style.color = "#27ae60";
+            } else {
+                document.getElementById(`opt-${idx}`).classList.add('wrong');
+                document.getElementById(`opt-${q.correct}`).classList.add('correct');
+                document.getElementById('res-status').innerText = "❌ إجابة خاطئة";
+                document.getElementById('res-status').style.color = "#c0392b";
+            }
+
+            document.getElementById('score-text').innerText = `النقاط: ${score}`;
+            document.getElementById('res-note').innerText = q.note || "";
+            feedback.style.display = 'block';
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        function loadNextQuestion() {
+            currentIdx++;
+            if(currentIdx < currentQuestions.length) displayQuestion();
+            else finishChallenge();
+        }
+
+        function finishChallenge() {
+            const screen = document.getElementById('challenge-screen');
+            screen.innerHTML = `
+                <div class="card" style="text-align:center; padding:50px;">
+                    <h2 style="color:var(--yellow)">انتهى التحدي! 🏁</h2>
+                    <div style="font-size:4rem; margin:30px 0; color:var(--orange);">${score}</div>
+                    <p>لقد أتممت تحديد كافة المعالم التشريحية بنجاح.</p>
+                    <button class="btn-primary" onclick="location.reload()" style="margin-top:20px;">العودة للرئيسية</button>
+                </div>`;
+        }
+
+        window.onload = loadSections;
+    </script>
+</body>
+</html>

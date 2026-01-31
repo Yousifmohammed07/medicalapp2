@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>إدارة الأكاديمية - حل مشكلة المساحة</title>
+    <style>
+        :root { --grad: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%); }
+        .admin-section { background: #0a1120; border-radius: 20px; padding: 30px; margin-bottom: 25px; border: 1px solid rgba(255, 215, 0, 0.2); }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; color: var(--yellow); font-weight: bold; }
+        input, select, textarea { 
+            width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #1e293b; 
+            background: #0f172a; color: white; outline: none; transition: 0.3s;
+        }
+        .btn-premium { 
+            width: 100%; padding: 16px; background: var(--grad); color: #000; border: none; 
+            border-radius: 14px; font-weight: 800; cursor: pointer; transition: 0.3s;
+        }
+        .btn-premium:hover { transform: scale(1.02); filter: brightness(1.1); }
+        .edit-mode { border-color: #27ae60 !important; box-shadow: 0 0 15px rgba(39, 174, 96, 0.3); }
+        
+        .data-card { background: #0f172a; padding: 15px; border-radius: 12px; margin-top: 10px; border-right: 4px solid var(--orange); }
+        .question-item { background: #1e293b; padding: 10px; margin-top: 5px; border-radius: 8px; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
+        .btn-action { padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.8rem; margin-right: 5px; }
+        .btn-edit { background: #2980b9; color: white; }
+        .btn-delete { background: #c0392b; color: white; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="admin_hub.html" class="logo">تحكم الأكاديمية 🏆</a>
+        <button class="btn-primary" onclick="location.href='admin_hub.html'" style="width:auto; padding: 5px 15px;">العودة</button>
+    </nav>
+
+    <div class="container">
+        <div class="admin-section" id="level-form-container">
+            <h2 id="level-form-title" style="color:var(--yellow); text-align:center;">📁 إضافة/تعديل مستوى</h2>
+            <div style="display:grid; grid-template-columns: 1fr 2fr 1fr; gap:10px;">
+                <div class="input-group">
+                    <label>رقم المستوى:</label>
+                    <input type="number" id="new-lvl-num">
+                </div>
+                <div class="input-group">
+                    <label>عنوان المستوى:</label>
+                    <input type="text" id="new-lvl-title">
+                </div>
+                <div class="input-group">
+                    <label>الأيقونة:</label>
+                    <input type="text" id="new-lvl-icon">
+                </div>
+            </div>
+            <button class="btn-premium" id="level-submit-btn" onclick="saveLevelToFirebase()">حفظ المستوى 🚀</button>
+            <button class="btn-premium" id="level-cancel-btn" style="display:none; background:#555; margin-top:10px;" onclick="location.reload()">إلغاء</button>
+        </div>
+
+        <div class="admin-section" id="question-form-container">
+            <h2 id="question-form-title" style="color:var(--orange); text-align:center;">📝 إضافة سؤال (مساحة غير محدودة)</h2>
+            <div class="input-group">
+                <label>اختر المستوى:</label>
+                <select id="lvl-select"><option value="">جاري التحميل...</option></select>
+            </div>
+            <div class="input-group">
+                <label>نص السؤال:</label>
+                <input type="text" id="new-q">
+            </div>
+            <div class="input-group">
+                <label>صورة للسؤال:</label>
+                <input type="file" id="new-q-img" accept="image/*">
+                <img id="edit-img-preview" style="display:none; width:100px; margin-top:10px; border-radius:8px;">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <div class="input-group"><label>خيار 1:</label><input type="text" id="opt-0"></div>
+                <div class="input-group"><label>خيار 2:</label><input type="text" id="opt-1"></div>
+                <div class="input-group"><label>خيار 3:</label><input type="text" id="opt-2"></div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px;">
+                <div class="input-group">
+                    <label>الإجابة (0-2):</label>
+                    <input type="number" id="correct-idx" min="0" max="2">
+                </div>
+                <div class="input-group">
+                    <label>التفسير العلمي:</label>
+                    <input type="text" id="new-exp">
+                </div>
+            </div>
+            <button class="btn-premium" id="question-submit-btn" onclick="saveQuestionToFirebase()">حفظ السؤال في السحاب ✅</button>
+        </div>
+
+        <div class="admin-section">
+            <h2 style="color:var(--yellow)">📂 إدارة المستويات والأسئلة</h2>
+            <div id="management-list">جاري جلب البيانات...</div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const COLLECTION = "exams";
+        let editingLevelId = null;
+        let editingQuestionId = null;
+
+        // --- وظائف المستويات ---
+        async function saveLevelToFirebase() {
+            const num = document.getElementById('new-lvl-num').value;
+            const title = document.getElementById('new-lvl-title').value;
+            const icon = document.getElementById('new-lvl-icon').value || "📚";
+            if(!num || !title) return alert("أكمل البيانات!");
+
+            try {
+                const data = { num: parseInt(num), title, icon, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                if(editingLevelId) {
+                    await db.collection(COLLECTION).doc(editingLevelId).update(data);
+                } else {
+                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection(COLLECTION).doc(num).set(data);
+                }
+                alert("تم الحفظ!"); location.reload();
+            } catch (e) { alert(e.message); }
+        }
+
+        function editLevel(id, num, title, icon) {
+            editingLevelId = id;
+            document.getElementById('new-lvl-num').value = num;
+            document.getElementById('new-lvl-title').value = title;
+            document.getElementById('new-lvl-icon').value = icon;
+            document.getElementById('level-form-title').innerText = "✏️ تعديل المستوى";
+            document.getElementById('level-submit-btn').innerText = "تحديث المستوى";
+            document.getElementById('level-cancel-btn').style.display = "block";
+            window.scrollTo(0,0);
+        }
+
+        // --- وظائف الأسئلة (النظام الجديد: مستند لكل سؤال) ---
+        async function saveQuestionToFirebase() {
+            const lvlId = document.getElementById('lvl-select').value;
+            const qText = document.getElementById('new-q').value;
+            const file = document.getElementById('new-q-img').files[0];
+            const correct = document.getElementById('correct-idx').value;
+            if(!lvlId || !qText) return alert("اختر المستوى واكتب السؤال!");
+
+            let imgData = document.getElementById('edit-img-preview').src || "";
+            if(file) {
+                imgData = await new Promise(r => { const reader = new FileReader(); reader.onload = e => r(e.target.result); reader.readAsDataURL(file); });
+            }
+
+            const questionObj = {
+                q: qText, img: imgData,
+                options: [document.getElementById('opt-0').value, document.getElementById('opt-1').value, document.getElementById('opt-2').value],
+                correct: parseInt(correct), exp: document.getElementById('new-exp').value,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                const qCol = db.collection(COLLECTION).doc(lvlId).collection("questions");
+                if(editingQuestionId) {
+                    await qCol.doc(editingQuestionId).update(questionObj);
+                } else {
+                    questionObj.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await qCol.add(questionObj);
+                }
+                alert("تم حفظ السؤال بنجاح!"); location.reload();
+            } catch (e) { alert(e.message); }
+        }
+
+        async function editQuestion(lvlId, qId, qData) {
+            editingQuestionId = qId;
+            document.getElementById('lvl-select').value = lvlId;
+            document.getElementById('new-q').value = qData.q;
+            document.getElementById('opt-0').value = qData.options[0];
+            document.getElementById('opt-1').value = qData.options[1];
+            document.getElementById('opt-2').value = qData.options[2];
+            document.getElementById('correct-idx').value = qData.correct;
+            document.getElementById('new-exp').value = qData.exp;
+            if(qData.img) {
+                const prev = document.getElementById('edit-img-preview');
+                prev.src = qData.img; prev.style.display = "block";
+            }
+            document.getElementById('question-form-title').innerText = "✏️ تعديل السؤال";
+            window.scrollTo(0, 300);
+        }
+
+        // --- عرض البيانات ---
+        window.onload = async function() {
+            const snap = await db.collection(COLLECTION).orderBy("num", "asc").get();
+            const list = document.getElementById('management-list');
+            const select = document.getElementById('lvl-select');
+            
+            select.innerHTML = `<option value="">-- اختر المستوى --</option>` + 
+                snap.docs.map(doc => `<option value="${doc.id}">المستوى ${doc.data().num}</option>`).join('');
+
+            list.innerHTML = "";
+            for (const doc of snap.docs) {
+                const d = doc.data();
+                const qSnap = await db.collection(COLLECTION).doc(doc.id).collection("questions").orderBy("createdAt", "asc").get();
+                
+                let qHtml = qSnap.docs.map((qDoc, idx) => {
+                    const qData = qDoc.data();
+                    return `
+                    <div class="question-item">
+                        <span>${idx + 1}. ${qData.q.substring(0, 30)}...</span>
+                        <div>
+                            <button class="btn-action btn-edit" onclick='editQuestion("${doc.id}", "${qDoc.id}", ${JSON.stringify(qData).replace(/'/g, "&apos;")})'>تعديل</button>
+                            <button class="btn-action btn-delete" onclick="if(confirm('حذف؟')) db.collection('${COLLECTION}').doc('${doc.id}').collection('questions').doc('${qDoc.id}').delete().then(()=>location.reload())">حذف</button>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                list.innerHTML += `
+                    <div class="data-card">
+                        <div style="display:flex; justify-content:space-between;">
+                            <b>${d.icon} المستوى ${d.num}: ${d.title}</b>
+                            <div>
+                                <button class="btn-action btn-edit" onclick="editLevel('${doc.id}', ${d.num}, '${d.title}', '${d.icon}')">تعديل</button>
+                                <button class="btn-action btn-delete" onclick="if(confirm('حذف المستوى؟')) db.collection('${COLLECTION}').doc('${doc.id}').delete().then(()=>location.reload())">حذف</button>
+                            </div>
+                        </div>
+                        <div style="margin-top:10px; padding-right:15px;">${qHtml || '<small>لا توجد أسئلة</small>'}</div>
+                    </div>`;
+            }
+        };
+    </script>
+</body>
+</html>
+

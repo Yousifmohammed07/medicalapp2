@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+    // التأكد من حالة المستخدم
+    firebase.auth().onAuthStateChanged((user) => {
+        if (!user) {
+            // إذا لم يكن مسجلاً، اطرده لصفحة تسجيل الدخول
+            window.location.href = "login.html";
+        }
+    });
+
+    function logout() {
+        firebase.auth().signOut().then(() => {
+            window.location.href = "login.html";
+        });
+    }
+</script>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <title>إدارة محتوى الرنين - كاميرا طبية</title>
+    <style>
+        .block-tool { border: 1px dashed var(--yellow); padding: 15px; margin-bottom: 10px; border-radius: 10px; position: relative; }
+        .remove-block { position: absolute; left: 10px; top: 10px; color: #ff4d4d; cursor: pointer; border: none; background: none; font-weight: bold; }
+        .btn-add { background: #27ae60; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="admin_hub.html" class="logo">إدارة دروس MRI 🧠</a>
+        <button class="btn-primary" onclick="location.href='admin_hub.html'" style="width:auto; padding: 5px 15px;">⬅️ العودة للمركز</button>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2 id="form-title" style="color:var(--yellow);">ق بناء درس فيزياء الرنين</h2>
+            
+            <input type="text" id="titleAr" placeholder="عنوان الدرس بالعربية (مثلاً: زمن الارتخاء T1)" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid var(--yellow); background:transparent; color:white;">
+            <input type="text" id="titleEn" placeholder="Lesson Title (English)" dir="ltr" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid var(--yellow); background:transparent; color:white;">
+
+            <div id="blocks-container"></div>
+
+            <div style="margin-top:20px; text-align:center;">
+                <button class="btn-add" onclick="addTextBlock()">➕ إضافة فقرة نصية</button>
+                <button class="btn-add" style="background:#2980b9;" onclick="addImageBlock()">📷 إضافة صورة توضيحية</button>
+            </div>
+
+            <hr style="margin:30px 0; border:0.5px solid #444;">
+            <button class="btn-primary" onclick="saveMRILesson()">🚀 نشر الدرس في قسم الرنين</button>
+        </div>
+
+        <div class="card">
+            <h3 style="color:var(--orange);">📂 الدروس الحالية:</h3>
+            <div id="mri-lessons-list"></div>
+        </div>
+    </div>
+
+    <script>
+        function addTextBlock(val = "") {
+            const id = Date.now();
+            const html = `
+                <div class="block-tool" id="block-${id}">
+                    <button class="remove-block" onclick="removeBlock(${id})">حذف X</button>
+                    <label style="color:var(--yellow)">نص الشرح (يدعم المعادلات):</label>
+                    <textarea class="block-data" data-type="text" rows="4" style="width:100%; margin-top:5px; background:rgba(255,255,255,0.05); color:white; border-radius:5px; padding:10px;">${val}</textarea>
+                </div>`;
+            document.getElementById('blocks-container').insertAdjacentHTML('beforeend', html);
+        }
+
+        function addImageBlock() {
+            const id = Date.now();
+            const html = `
+                <div class="block-tool" id="block-${id}">
+                    <button class="remove-block" onclick="removeBlock(${id})">حذف X</button>
+                    <label style="color:var(--yellow)">اختيار صورة من الاستوديو:</label>
+                    <input type="file" onchange="handleImg(event, ${id})" accept="image/*" style="margin-top:5px; color:white;">
+                    <input type="hidden" class="block-data" data-type="image" id="hidden-${id}">
+                    <img id="preview-${id}" style="width:100%; max-height:200px; object-fit:contain; display:none; margin-top:10px; border-radius:10px;">
+                </div>`;
+            document.getElementById('blocks-container').insertAdjacentHTML('beforeend', html);
+        }
+
+        function handleImg(e, id) {
+            const reader = new FileReader();
+            reader.onload = f => {
+                document.getElementById(`preview-${id}`).src = f.target.result;
+                document.getElementById(`preview-${id}`).style.display = "block";
+                document.getElementById(`hidden-${id}`).value = f.target.result;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+
+        function removeBlock(id) { document.getElementById(`block-${id}`).remove(); }
+
+        function saveMRILesson() {
+            const titleAr = document.getElementById('titleAr').value;
+            const content = Array.from(document.querySelectorAll('.block-data')).map(el => ({ type: el.dataset.type, value: el.value }));
+            
+            if(!titleAr || content.length === 0) return alert("أكمل البيانات!");
+
+            let lessons = JSON.parse(localStorage.getItem('mri_lessons')) || [];
+            lessons.push({ titleAr, titleEn: document.getElementById('titleEn').value, content });
+            localStorage.setItem('mri_lessons', JSON.stringify(lessons));
+            alert("تم الحفظ!");
+            location.reload();
+        }
+
+        window.onload = function() {
+            const lessons = JSON.parse(localStorage.getItem('mri_lessons')) || [];
+            document.getElementById('mri-lessons-list').innerHTML = lessons.map((l, i) => `
+                <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
+                    <span>${l.titleAr}</span>
+                    <button onclick="deleteLesson(${i})" style="color:red; background:none; border:none; cursor:pointer;">حذف 🗑️</button>
+                </div>
+            `).join('');
+        };
+
+        function deleteLesson(i) {
+            let lessons = JSON.parse(localStorage.getItem('mri_lessons'));
+            lessons.splice(i, 1);
+            localStorage.setItem('mri_lessons', JSON.stringify(lessons));
+            location.reload();
+        }
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="firebase-config.js"></script>
+    
+    
+    <script>
+    const COLLECTION = "mri"; // 💡 غيرها إلى us_lessons أو rad_protection حسب الصفحة
+
+    async function saveData() {
+        const title = document.querySelector('input').value;
+        const desc = document.querySelector('textarea').value;
+        
+        await db.collection(COLLECTION).add({
+            title, desc, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        location.reload();
+    }
+
+    // جلب البيانات للحذف
+    window.onload = async function() {
+        const snap = await db.collection(COLLECTION).orderBy("createdAt", "desc").get();
+        document.getElementById('data-list').innerHTML = snap.docs.map(doc => `
+            <div style="display:flex; justify-content:space-between; padding:10px;">
+                <span>${doc.data().title}</span>
+                <button onclick="db.collection('${COLLECTION}').doc('${doc.id}').delete().then(()=>location.reload())">حذف 🗑️</button>
+            </div>
+        `).join('');
+    };
+</script>
+</body>
+</html>

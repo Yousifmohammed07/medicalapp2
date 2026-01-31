@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>قاموس المصطلحات - أكاديمية كاميرا طبية</title>
+    <style>
+        body { background-color: #050a14; color: #ffffff; font-family: 'Segoe UI', sans-serif; }
+        
+        .search-box-container {
+            background: #111b2d; padding: 25px; border-radius: 20px;
+            margin: 30px auto; border: 2px solid var(--orange);
+            max-width: 900px; box-sizing: border-box;
+        }
+        
+        #search-input {
+            width: 100%; padding: 15px; border-radius: 12px; border: none;
+            background: #ffffff; color: #000; font-size: 1.2rem; font-weight: bold;
+            box-sizing: border-box; outline: none; text-align: center;
+        }
+
+        /* تنسيق الجدول الاحترافي */
+        .table-container { overflow-x: auto; margin-top: 20px; border-radius: 15px; border: 1px solid #FFD700; }
+        
+        .terms-table {
+            width: 100%; border-collapse: collapse; background: #111b2d; color: white;
+            min-width: 600px; /* لضمان عدم تداخل الأعمدة في الشاشات الصغيرة */
+        }
+
+        .terms-table th {
+            background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%);
+            color: #000; padding: 18px; text-align: center; font-size: 1.1rem;
+            position: sticky; top: 0;
+        }
+
+        .terms-table td {
+            padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,215,0,0.1);
+            font-size: 1rem;
+        }
+
+        .terms-table tr:hover { background: rgba(255, 140, 0, 0.05); }
+
+        .abbr-text { color: var(--orange); font-weight: bold; font-family: 'Arial', sans-serif; }
+        .eng-text { font-weight: bold; color: var(--yellow); }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">كاميرا طبية 📷</a>
+        <button class="btn-primary" onclick="location.href='index.html'" style="width:auto; padding:5px 15px;">الرئيسية</button>
+    </nav>
+
+    <div class="container">
+        <h1 style="text-align:center; color:var(--yellow); margin-top:30px;">📖 قاموس المصطلحات الإشعاعية</h1>
+        
+        <div class="search-box-container">
+            <input type="text" id="search-input" placeholder="🔍 ابحث عن اختصار، مصطلح إنجليزي أو معنى عربي..." onkeyup="filterTerms()">
+        </div>
+
+        <div class="table-container">
+            <table class="terms-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">الاختصار (Abbr)</th>
+                        <th style="width: 40%;">المصطلح (English)</th>
+                        <th style="width: 40%;">المعنى (Arabic)</th>
+                    </tr>
+                </thead>
+                <tbody id="terms-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        let allTerms = [];
+        async function loadTerms() {
+            try {
+                const snap = await db.collection("radiology_terms").orderBy("english", "asc").get();
+                allTerms = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                displayTerms(allTerms);
+            } catch(e) { console.error("Error:", e); }
+        }
+
+        function displayTerms(data) {
+            const body = document.getElementById('terms-body');
+            body.innerHTML = data.map(t => `
+                <tr>
+                    <td class="abbr-text">${t.abbr || '---'}</td>
+                    <td class="eng-text" dir="ltr">${t.english}</td>
+                    <td>${t.arabic}</td>
+                </tr>
+            `).join('');
+        }
+
+        function filterTerms() {
+            const val = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allTerms.filter(t => 
+                t.english.toLowerCase().includes(val) || 
+                t.arabic.includes(val) || 
+                (t.abbr && t.abbr.toLowerCase().includes(val))
+            );
+            displayTerms(filtered);
+        }
+        window.onload = loadTerms;
+    </script>
+</body>
+</html>

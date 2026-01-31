@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <title>إدارة الأطلس - الضغط الذكي والسرعة القصوى</title>
+    <style>
+        body { background-color: #050a14; color: #ffffff; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .admin-section { 
+            background: #111b2d; border-radius: 20px; padding: 25px; 
+            margin-bottom: 25px; border: 2px solid #FFD700; 
+        }
+        input, textarea, select { 
+            width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #FF8C00; 
+            background: #ffffff !important; color: #000000 !important; 
+            margin-bottom: 15px; font-weight: bold; font-size: 1rem;
+        }
+        label { color: #FFD700; font-weight: bold; display: block; margin-bottom: 5px; }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        .btn-save { 
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); 
+            color: white; font-weight: bold; padding: 18px; border: none; 
+            border-radius: 12px; width: 100%; font-size: 1.3rem; cursor: pointer;
+        }
+        .group-container { background: #1a263f; border: 1px solid #FFD700; border-radius: 12px; margin-top: 15px; overflow: hidden; }
+        .group-header { background: #111b2d; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid rgba(255, 215, 0, 0.2); }
+        .positions-list { display: none; padding: 15px; background: #0a1120; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; }
+        .btn-action { padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-right: 5px; border: none; }
+        .btn-edit { background: #FFD700; color: #000; }
+        .btn-delete { background: #e74c3c; color: #fff; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="admin_hub.html" class="logo">إدارة الأطلس الذكية 📘</a>
+        <button onclick="location.href='admin_hub.html'" style="background:#444; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">رجوع</button>
+    </nav>
+
+    <div class="container">
+        <div class="admin-section">
+            <h2 id="group-form-title" style="color:#FFD700;">📁 إدارة المجموعات</h2>
+            <label>اسم المجموعة:</label>
+            <input type="text" id="group-title" placeholder="أدخل اسم المجموعة">
+            <div class="grid-inputs">
+                <div><label>أيقونة:</label><input type="text" id="group-icon" placeholder="مثلاً: 🩻"></div>
+                <div><label>صورة المجموعة:</label><input type="file" id="group-img" accept="image/*"></div>
+            </div>
+            <button id="btn-group-save" class="btn-save" onclick="saveGroup()">حفظ المجموعة (مع الضغط الذكي) 🚀</button>
+        </div>
+
+        <div class="admin-section">
+            <h2 id="pos-form-title" style="color:#FF8C00;">📍 إدارة وضعيات التصوير</h2>
+            <label>المجموعة التابعة لها:</label>
+            <select id="pos-group-id"><option value="">-- اختر المجموعة --</option></select>
+            
+            <label>اسم الوضعية:</label>
+            <input type="text" id="pos-title" placeholder="مثلاً: Chest PA">
+            <label>صورة الوضعية:</label>
+            <input type="file" id="pos-img" accept="image/*">
+
+            <div class="grid-inputs">
+                <div><label>CR:</label><input type="text" id="pos-cr"></div>
+                <div><label>SID:</label><input type="text" id="pos-sid"></div>
+                <div><label>Factors:</label><input type="text" id="pos-factors"></div>
+                <div><label>IR:</label><input type="text" id="pos-ir"></div>
+            </div>
+            <label>التموضع:</label><textarea id="pos-instr" rows="2"></textarea>
+            <label>المعايير:</label><textarea id="pos-criteria" rows="2"></textarea>
+            
+            <button id="btn-pos-save" class="btn-save" style="background: var(--orange);" onclick="savePosition()">حفظ الوضعية (مع الضغط الذكي) ✅</button>
+        </div>
+
+        <div class="admin-section">
+            <h2>🔍 استعراض وإدارة المحتوى</h2>
+            <div id="full-management-list">جاري التحميل...</div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const GROUPS_COL = "atlas_groups";
+        const POS_COL = "custom_atlas";
+        let editGId = null, editPId = null;
+
+        // [تحديث الحل 3] دالة ضغط الصور لتقليص الحجم قبل الحفظ
+        async function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800; // تصغير العرض لتقليل الحجم
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        // تصدير بصيغة JPEG وبجودة 0.6 لتوفير مساحة هائلة مع الحفاظ على الوضوح
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                    };
+                };
+            });
+        }
+
+        async function saveGroup() {
+            const title = document.getElementById('group-title').value;
+            const icon = document.getElementById('group-icon').value;
+            const file = document.getElementById('group-img').files[0];
+            if(!title) return alert("الاسم مطلوب");
+            
+            let data = { title, icon };
+            if(file) {
+                document.getElementById('btn-group-save').innerText = "⏳ جاري ضغط الصورة...";
+                data.img = await compressImage(file); // تطبيق الضغط
+            }
+
+            if(editGId) await db.collection(GROUPS_COL).doc(editGId).update(data);
+            else { data.createdAt = firebase.firestore.FieldValue.serverTimestamp(); await db.collection(GROUPS_COL).add(data); }
+            location.reload();
+        }
+
+        async function savePosition() {
+            const groupId = document.getElementById('pos-group-id').value;
+            const title = document.getElementById('pos-title').value;
+            const file = document.getElementById('pos-img').files[0];
+            if(!groupId || !title) return alert("أكمل البيانات");
+
+            let data = {
+                groupId, title,
+                cr: document.getElementById('pos-cr').value,
+                sid: document.getElementById('pos-sid').value,
+                factors: document.getElementById('pos-factors').value,
+                ir: document.getElementById('pos-ir').value,
+                instr: document.getElementById('pos-instr').value,
+                criteria: document.getElementById('pos-criteria').value
+            };
+
+            if(file) {
+                document.getElementById('btn-pos-save').innerText = "⏳ جاري ضغط الصورة...";
+                data.img = await compressImage(file); // تطبيق الضغط
+            }
+
+            if(editPId) await db.collection(POS_COL).doc(editPId).update(data);
+            else { data.createdAt = firebase.firestore.FieldValue.serverTimestamp(); await db.collection(POS_COL).add(data); }
+            location.reload();
+        }
+
+        // دالة التحميل الذكي (المحافظة على السرعة)
+        async function toggleGroup(id) {
+            const el = document.getElementById('pos-list-' + id);
+            if (el.style.display === 'none' || el.style.display === '') {
+                el.style.display = 'block';
+                if (el.innerHTML.trim() === "") {
+                    el.innerHTML = '<p style="color:var(--yellow); padding:10px;">⏳ جاري الجلب...</p>';
+                    const pSnap = await db.collection(POS_COL).where("groupId", "==", id).get();
+                    el.innerHTML = pSnap.docs.map(p => `
+                        <div class="item-row">
+                            <span>📍 ${p.data().title}</span>
+                            <div>
+                                <button class="btn-action btn-edit" onclick="loadPositionEdit('${p.id}')">تعديل</button>
+                                <button class="btn-action btn-delete" onclick="deleteDoc('${POS_COL}', '${p.id}')">حذف</button>
+                            </div>
+                        </div>`).join('') || '<p>لا توجد وضعيات.</p>';
+                }
+            } else { el.style.display = 'none'; }
+        }
+
+        window.addEventListener('load', async function() {
+            const list = document.getElementById('full-management-list');
+            const select = document.getElementById('pos-group-id');
+            const gSnap = await db.collection(GROUPS_COL).orderBy("createdAt", "asc").get();
+            select.innerHTML += gSnap.docs.map(doc => `<option value="${doc.id}">${doc.data().title}</option>`).join('');
+            list.innerHTML = gSnap.docs.map(gDoc => `
+                <div class="group-container">
+                    <div class="group-header" onclick="toggleGroup('${gDoc.id}')">
+                        <b>📂 ${gDoc.data().icon || ''} ${gDoc.data().title}</b>
+                        <div>
+                            <button class="btn-action btn-edit" onclick="event.stopPropagation(); loadGroupEdit('${gDoc.id}', '${gDoc.data().title}', '${gDoc.data().icon}')">تعديل</button>
+                            <button class="btn-action btn-delete" onclick="event.stopPropagation(); deleteDoc('${GROUPS_COL}', '${gDoc.id}')">حذف</button>
+                        </div>
+                    </div>
+                    <div class="positions-list" id="pos-list-${gDoc.id}"></div>
+                </div>`).join('');
+        });
+
+        // دوال التعديل والحذف (كما هي)
+        function loadGroupEdit(id, title, icon) {
+            editGId = id; document.getElementById('group-title').value = title;
+            document.getElementById('group-icon').value = icon; window.scrollTo(0,0);
+        }
+        async function loadPositionEdit(id) {
+            editPId = id; const d = (await db.collection(POS_COL).doc(id).get()).data();
+            document.getElementById('pos-group-id').value = d.groupId;
+            document.getElementById('pos-title').value = d.title;
+            document.getElementById('pos-cr').value = d.cr || "";
+            document.getElementById('pos-sid').value = d.sid || "";
+            document.getElementById('pos-factors').value = d.factors || "";
+            document.getElementById('pos-ir').value = d.ir || "";
+            document.getElementById('pos-instr').value = d.instr || "";
+            document.getElementById('pos-criteria').value = d.criteria || "";
+            window.scrollTo(0, 400);
+        }
+        async function deleteDoc(col, id) { if(confirm("حذف؟")) { await db.collection(col).doc(id).delete(); location.reload(); } }
+    </script>
+</body>
+</html>
