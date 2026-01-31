@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <title>فيزياء السونار - كاميرا طبية</title>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">كاميرا طبية 📷</a>
+        <div class="dropdown">
+            <button onclick="toggleMenu()" class="dropbtn">القائمة ☰</button>
+            <div id="myDropdown" class="dropdown-content">
+               <a href="index.html">الرئيسية</a>
+                <a href="physics_calc.html">الحاسبة الفيزيائية 🧮</a>
+                <a href="contrast_guide.html">دليل الصبغات 🧪</a>
+                <a href="exam.html">مركز الاختبارات</a>
+                <a href="anatomy.html">تحدي التشريح</a>
+                <a href="atlas.html">أطلس الوضعيات</a>
+                <a href="artifacts.html">مختبر الصور</a>
+                <a href="safety.html">تحدي السلامة</a>
+                <a href="ct.html">CT Scan</a>
+                <a href="xray.html">X-ray</a>
+                <a href="mri.html">MRI</a>
+                <a href="ultrasound.html">فيزياء السونار 🔊</a>
+                <a href="qc_lab.html">مختبر الرقابة النوعية 🛠️</a>
+                <a href="protection.html">الوقاية الإشعاعية 🛡️</a>
+                <a href="physics_sim.html">محاكي الفيزياء ⚛️</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 style="text-align:center; color:var(--yellow); margin-top:20px;">🔊 مختبر فيزياء الموجات فوق الصوتية</h1>
+        <p style="text-align:center; color:#ccc;">استكشف عالم الموجات الميكانيكية وتطبيقاتها في التشخيص الطبي.</p>
+        
+        <div id="lessons-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-top:30px;">
+            </div>
+    </div>
+
+    <div id="modal" class="modal" style="display:none; position:fixed; z-index:2000; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); overflow-y:auto;">
+        <div class="modal-content" style="background:var(--bg-color); margin:5% auto; padding:25px; width:90%; max-width:800px; border-radius:20px; border:2px solid var(--orange);">
+            <span onclick="closeM()" style="float:left; font-size:30px; cursor:pointer; color:var(--orange);">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const grid = document.getElementById('lessons-grid');
+            const lessons = JSON.parse(localStorage.getItem('us_lessons')) || [];
+            if(lessons.length === 0) { grid.innerHTML = "<p style='text-align:center; grid-column:1/-1;'>قريباً.. سيتم إضافة شروحات السونار.</p>"; return; }
+            
+            grid.innerHTML = lessons.map((l, i) => `
+                <div class="card" style="cursor:pointer; text-align:center;" onclick="openL(${i})">
+                    <h3 style="color:var(--yellow)">${l.titleAr}</h3>
+                    <p style="color:gray; font-size:0.8rem;">${l.titleEn}</p>
+                    <button class="btn-primary" style="width:auto; padding:5px 20px;">ابدأ الدرس 📖</button>
+                </div>
+            `).join('');
+        };
+
+        function openL(i) {
+            const lessons = JSON.parse(localStorage.getItem('us_lessons'));
+            const lesson = lessons[i];
+            const body = document.getElementById('modal-body');
+            let html = `<h2 style="color:var(--yellow)">${lesson.titleAr}</h2><hr style="border:0.5px solid #333; margin-bottom:20px;">`;
+            
+            lesson.content.forEach(b => {
+                if(b.type === 'text') html += `<p style="line-height:1.7; margin-bottom:15px; white-space:pre-line;">${b.value}</p>`;
+                else html += `<img src="${b.value}" style="width:100%; border-radius:10px; border:2px solid var(--orange); margin-bottom:15px;">`;
+            });
+
+            body.innerHTML = html;
+            document.getElementById('modal').style.display = "block";
+            if(window.MathJax) MathJax.typesetPromise([body]);
+        }
+
+        function closeM() { document.getElementById('modal').style.display = "none"; }
+        function toggleMenu() { document.getElementById("myDropdown").classList.toggle("show"); }
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="firebase-config.js"></script>
+    
+    <script>
+    window.onload = async function() {
+        const COLLECTION = "ultrasound"; // 💡 نفس الاسم المستخدم في الإدارة
+        const snap = await db.collection(COLLECTION).orderBy("createdAt", "desc").get();
+        
+        document.getElementById('display-grid').innerHTML = snap.docs.map(doc => `
+            <div class="card">
+                <h3>${doc.data().title}</h3>
+                <p>${doc.data().desc}</p>
+            </div>
+        `).join('');
+    };
+</script>
+</body>
+</html>

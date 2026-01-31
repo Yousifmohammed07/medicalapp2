@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] },
+            options: { processHtmlClass: 'math-tex' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <title>الحاسبة الفيزيائية المتكاملة - كاميرا طبية</title>
+    <style>
+        .calc-card { border-top: 4px solid var(--orange); margin-bottom: 30px; }
+        .formula-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; text-align: center; color: var(--yellow); margin-bottom: 20px; }
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .result-display { 
+            margin-top: 15px; padding: 15px; border-radius: 10px; text-align: center; 
+            background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.2);
+            min-height: 50px; line-height: 1.6;
+        }
+        .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-top: 10px; }
+        .pass { background: rgba(39, 174, 96, 0.2); color: #2ecc71; border: 1px solid #2ecc71; }
+        .fail { background: rgba(192, 57, 43, 0.2); color: #e74c3c; border: 1px solid #e74c3c; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #ccc; }
+        input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid var(--orange); background: rgba(255,255,255,0.05); color: white; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">كاميرا طبية 📷</a>
+        <button class="btn-primary" onclick="location.href='index.html'" style="width:auto; padding:5px 15px;">الرئيسية</button>
+    </nav>
+
+    <div class="container">
+        <h1 style="text-align:center; color:var(--yellow); margin-top:20px;">🧮 المختبر الفيزيائي المتكامل</h1>
+
+        <div class="card calc-card">
+            <h2 style="color:var(--orange)">📏 قانون التربيع العكسي</h2>
+            <div class="formula-box">$$ I_1 \times d_1^2 = I_2 \times d_2^2 $$</div>
+            <div class="input-row">
+                <div><label>الشدة الأولى ($I_1$):</label><input type="number" id="isl-i1" value="100"></div>
+                <div><label>المسافة الأولى ($d_1$):</label><input type="number" id="isl-d1" value="1"></div>
+            </div>
+            <div class="input-row">
+                <div><label>المسافة الجديدة ($d_2$):</label><input type="number" id="isl-d2" value="2"></div>
+                <button class="btn-primary" onclick="calcISL()">احسب</button>
+            </div>
+            <div id="isl-res" class="result-display"></div>
+        </div>
+
+        <div class="card calc-card">
+            <h2 style="color:var(--orange)">📉 قانون الوهن الإشعاعي (Attenuation)</h2>
+            <div class="formula-box">$$ I = I_0 \times e^{-\mu x} $$</div>
+            <div class="input-row">
+                <div><label>الشدة الأصلية ($I_0$):</label><input type="number" id="att-i0" value="100"></div>
+                <div><label>معامل الوهن ($\mu$):</label><input type="number" id="att-mu" value="0.693"></div>
+            </div>
+            <div class="input-row">
+                <div><label>السُمك ($x$):</label><input type="number" id="att-x" value="1"></div>
+                <button class="btn-primary" onclick="calcAttenuation()">احسب الوهن</button>
+            </div>
+            <div id="att-res" class="result-display"></div>
+        </div>
+
+        <div class="card calc-card">
+            <h2 style="color:var(--orange)">🛡️ طبقة القيمة النصفية (HVL)</h2>
+            <div class="formula-box">$$ HVL = \frac{0.693}{\mu} $$</div>
+            <div class="input-row">
+                <div><label>معامل الوهن الخطي ($\mu$):</label><input type="number" id="hvl-mu" placeholder="مثلاً: 0.15"></div>
+                <button class="btn-primary" onclick="calcHVL()">احسب HVL</button>
+            </div>
+            <div id="hvl-res" class="result-display"></div>
+        </div>
+
+        <div class="card calc-card">
+            <h2 style="color:var(--orange)">⚡ دقة فرق الجهد (kVp Accuracy)</h2>
+            <div class="input-row">
+                <div><label>الجهد المختار ($kVp_{\text{set}}$):</label><input type="number" id="qc-kvp-set"></div>
+                <div><label>الجهد المقاس ($kVp_{\text{meas}}$):</label><input type="number" id="qc-kvp-meas"></div>
+            </div>
+            <button class="btn-primary" onclick="calcQCKvp()">تحليل الدقة 📊</button>
+            <div id="qc-kvp-res" class="result-display"></div>
+        </div>
+
+        <div class="card calc-card">
+            <h2 style="color:var(--orange)">⏱️ دقة المؤقت (Timer Accuracy)</h2>
+            <div class="input-row">
+                <div><label>الزمن المختار (ms):</label><input type="number" id="qc-t-set"></div>
+                <div><label>الزمن المقاس (ms):</label><input type="number" id="qc-t-meas"></div>
+            </div>
+            <button class="btn-primary" onclick="calcQCTimer()">تحليل الزمن 📊</button>
+            <div id="qc-t-res" class="result-display"></div>
+        </div>
+
+        <div class="card calc-card">
+            <h2 style="color:var(--orange)">📐 خطية التعريض (mAs Linearity)</h2>
+            <div class="input-row">
+                <div><label>القراءة الأولى (mR/mAs):</label><input type="number" id="qc-l-r1"></div>
+                <div><label>القراءة الثانية (mR/mAs):</label><input type="number" id="qc-l-r2"></div>
+            </div>
+            <button class="btn-primary" onclick="calcQCLinearity()">تحليل الخطية 📊</button>
+            <div id="qc-l-res" class="result-display"></div>
+        </div>
+
+        <div class="card calc-card">
+            <h2 style="color:var(--orange)">🌀 حساب الـ Pitch في المفراس</h2>
+            <div class="input-row">
+                <div><label>حركة الطاولة (mm):</label><input type="number" id="pitch-table" value="10"></div>
+                <div><label>عرض الحزمة (mm):</label><input type="number" id="pitch-beam" value="10"></div>
+            </div>
+            <button class="btn-primary" onclick="calcPitch()">احسب Pitch</button>
+            <div id="pitch-res" class="result-display"></div>
+        </div>
+    </div>
+
+    <script>
+        function refreshMath(id) { if (window.MathJax) MathJax.typesetPromise([document.getElementById(id)]); }
+
+        function calcISL() {
+            const i1 = parseFloat(document.getElementById('isl-i1').value);
+            const d1 = parseFloat(document.getElementById('isl-d1').value);
+            const d2 = parseFloat(document.getElementById('isl-d2').value);
+            const i2 = (i1 * Math.pow(d1, 2)) / Math.pow(d2, 2);
+            document.getElementById('isl-res').innerHTML = `النتيجة: $ I_2 = ${i2.toFixed(2)} \\text{ mGy} $`;
+            refreshMath('isl-res');
+        }
+
+        function calcAttenuation() {
+            const i0 = parseFloat(document.getElementById('att-i0').value);
+            const mu = parseFloat(document.getElementById('att-mu').value);
+            const x = parseFloat(document.getElementById('att-x').value);
+            const i = i0 * Math.exp(-mu * x);
+            document.getElementById('att-res').innerHTML = `الشدة النافذة: $ I = ${i.toFixed(2)} $`;
+            refreshMath('att-res');
+        }
+
+        function calcHVL() {
+            const mu = parseFloat(document.getElementById('hvl-mu').value);
+            const hvl = 0.693 / mu;
+            document.getElementById('hvl-res').innerHTML = `سُمك القيمة النصفية: $ HVL = ${hvl.toFixed(3)} \\text{ cm} $`;
+            refreshMath('hvl-res');
+        }
+
+        function calcQCKvp() {
+            const set = parseFloat(document.getElementById('qc-kvp-set').value);
+            const meas = parseFloat(document.getElementById('qc-kvp-meas').value);
+            const err = (Math.abs(meas - set) / set) * 100;
+            const pass = err <= 5;
+            document.getElementById('qc-kvp-res').innerHTML = `الخطأ: $${err.toFixed(2)}\%$ <br> <span class="status-badge ${pass?'pass':'fail'}">${pass?'✅ مطابق':'❌ غير مطابق'}</span>`;
+            refreshMath('qc-kvp-res');
+        }
+
+        function calcQCTimer() {
+            const set = parseFloat(document.getElementById('qc-t-set').value);
+            const meas = parseFloat(document.getElementById('qc-t-meas').value);
+            const err = (Math.abs(meas - set) / set) * 100;
+            const pass = err <= 5;
+            document.getElementById('qc-t-res').innerHTML = `الخطأ: $${err.toFixed(2)}\%$ <br> <span class="status-badge ${pass?'pass':'fail'}">${pass?'✅ مطابق':'❌ غير مطابق'}</span>`;
+            refreshMath('qc-t-res');
+        }
+
+        function calcQCLinearity() {
+            const r1 = parseFloat(document.getElementById('qc-l-r1').value);
+            const r2 = parseFloat(document.getElementById('qc-l-r2').value);
+            const l = Math.abs(r1 - r2) / (r1 + r2);
+            const pass = l <= 0.1;
+            document.getElementById('qc-l-res').innerHTML = `معامل الخطية: $L = ${l.toFixed(3)}$ <br> <span class="status-badge ${pass?'pass':'fail'}">${pass?'✅ خطي':'❌ غير خطي'}</span>`;
+            refreshMath('qc-l-res');
+        }
+
+        function calcPitch() {
+            const table = parseFloat(document.getElementById('pitch-table').value);
+            const beam = parseFloat(document.getElementById('pitch-beam').value);
+            const pitch = (table / beam).toFixed(2);
+            document.getElementById('pitch-res').innerHTML = `النتيجة: $ Pitch = ${pitch} $`;
+            refreshMath('pitch-res');
+        }
+    </script>
+</body>
+</html>

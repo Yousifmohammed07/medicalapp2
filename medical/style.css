@@ -1,0 +1,234 @@
+/* تعديلات الهوية البصرية لموقع "كاميرا طبية" 
+   الهدف: زيادة التباين وتحسين تجربة المستخدم (UX)
+*/
+
+:root {
+    /* تم تحديث الدرجات لضمان الراحة البصرية والقراءة الواضحة */
+    --bg-color: #0f172a;          /* خلفية الموقع الأساسية - أزرق عميق */
+    --card-bg: #1e293b;          /* خلفية البطاقات - درجة أفتح للعمق */
+    --primary-yellow: #fbbf24;   /* أصفر ذهبي مشرق */
+    --primary-orange: #f59e0b;   /* برتقالي دافئ */
+    --text-primary: #ffffff;     /* أبيض ناصع للعناوين */
+    --text-secondary: #cbd5e1;   /* رمادي فاتح جداً للشروحات لسهولة القراءة */
+    --navy: #0f172a;
+    --orange: #f59e0b;
+    --yellow: #fbbf24;
+    --white: #ffffff;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: 'Tajawal', 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0; /* تم إزالة الـ padding من الجسم لضمان انسيابية الـ Nav */
+    direction: rtl;
+    line-height: 1.6;
+}
+
+/* --- القائمة العلوية (Navigation) --- */
+nav {
+    background-color: #020617; /* خلفية أغمق قليلاً للـ Nav */
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--primary-orange);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.logo {
+    color: var(--primary-yellow);
+    font-weight: bold;
+    font-size: 22px;
+    text-decoration: none;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* --- القائمة المنسدلة --- */
+.dropdown-content {
+    display: none; 
+    position: absolute; 
+    left: 0; 
+    background-color: #020617;
+    min-width: 220px; 
+    border: 1px solid var(--primary-orange); 
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.7);
+    max-height: 450px; 
+    overflow-y: auto;
+    scrollbar-width: thin;
+    border-radius: 0 0 8px 8px;
+}
+
+.dropdown-content::-webkit-scrollbar { width: 6px; }
+.dropdown-content::-webkit-scrollbar-thumb {
+    background-color: var(--primary-orange);
+    border-radius: 10px;
+}
+
+.show { display: block; }
+.dropdown-content a {
+    color: var(--text-secondary);
+    padding: 14px;
+    text-decoration: none;
+    display: block;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: 0.2s;
+}
+
+.dropdown-content a:hover {
+    background-color: var(--card-bg);
+    color: var(--primary-yellow);
+}
+
+/* --- تصميم البطاقات (Feature Cards) --- */
+.main-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    padding: 30px 20px;
+}
+
+.feature-card {
+    background: var(--card-bg);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    border: 1px solid rgba(251, 191, 36, 0.1); /* حدود خفيفة جداً */
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 350px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--primary-orange);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.5);
+}
+
+.feature-card h3 {
+    color: var(--primary-yellow);
+    margin: 15px 0;
+    font-size: 1.4rem;
+}
+
+.feature-card p {
+    color: var(--text-secondary); /* النص المشروح أصبح الآن واضحاً جداً */
+    font-size: 1rem;
+    margin-bottom: 20px;
+}
+
+/* --- الأزرار (Buttons) --- */
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-orange), var(--primary-yellow));
+    color: #000 !important; /* نص أسود فوق الأصفر لتباين عالٍ */
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    width: 100%;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.3s;
+}
+
+.btn-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);
+}
+
+/* --- الأقسام الإضافية (Admin, Track, etc.) --- */
+.card {
+    background: var(--card-bg);
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 12px;
+    border-right: 5px solid var(--primary-orange);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.track-card {
+    background: var(--card-bg);
+    border: 2px solid var(--primary-yellow);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.track-card.locked {
+    opacity: 0.4;
+    filter: grayscale(1);
+    cursor: not-allowed;
+}
+
+/* --- تحسينات المحتوى والصور --- */
+.content-image {
+    width: 100%;
+    max-width: 600px;
+    display: block;
+    margin: 20px auto;
+    border-radius: 12px;
+    border: 2px solid var(--primary-orange);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+#q-image-area img {
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: 10px;
+    border: 2px solid var(--primary-orange);
+}
+
+.option-container {
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    padding: 14px;
+    margin: 10px 0;
+    border-radius: 10px;
+    cursor: pointer;
+    background: rgba(30, 41, 59, 0.5);
+    transition: 0.2s;
+}
+
+.option-container:hover {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: var(--primary-orange);
+}
+
+.option-container.selected {
+    background: var(--primary-orange);
+    color: #000;
+    font-weight: bold;
+}
+
+/* --- معالجة الحاويات الطويلة --- */
+.card, .modal-content {
+    height: auto; 
+    max-height: 90vh; 
+    overflow-y: auto; 
+    word-wrap: break-word; 
+    overflow-wrap: break-word;
+}
+
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    text-decoration: none; /* هذا السطر هو الذي يزيل الخط */
+    gap: 10px;
+    outline: none;
+}
+
+.logo {
+    color: var(--yellow);
+    font-weight: bold;
+    font-size: 20px;
+    text-decoration: none; /* زيادة تأكيد لإزالة الخط عن النص نفسه */
+}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <title>إدارة المصطلحات - كاميرا طبية</title>
+    <style>
+        .term-form input, .term-form textarea { width: 100%; margin-bottom: 15px; }
+        .edit-badge { background: var(--yellow); color: var(--navy); padding: 5px 10px; border-radius: 5px; display: none; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="admin_hub.html" class="logo">إدارة المصطلحات 📖</a>
+        <button class="btn-primary" onclick="location.href='admin_hub.html'" style="width:auto; padding: 5px 15px;">⬅️ العودة</button>
+    </nav>
+
+    <div class="container">
+        <div class="card term-form">
+            <div id="edit-indicator" class="edit-badge">وضع التعديل نشط ✏️</div>
+            <h2 id="form-title" style="color:var(--orange);">إضافة مصطلح جديد</h2>
+            <input type="text" id="termEn" placeholder="المصطلح بالإنجليزية (مثلاً: Attenuation)" dir="ltr">
+            <input type="text" id="termAr" placeholder="الترجمة بالعربية (مثلاً: توهين)">
+            <textarea id="termDesc" placeholder="وصف مبسط للمصطلح..." rows="3"></textarea>
+            
+            <div style="display:flex; gap:10px;">
+                <button class="btn-primary" id="save-btn" onclick="saveTerm()">🚀 حفظ المصطلح</button>
+                <button class="btn-primary" id="cancel-btn" style="background:#555; display:none;" onclick="location.reload()">إلغاء</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="color:var(--yellow);">قائمة المصطلحات الحالية</h2>
+            <div id="terms-list">جاري التحميل...</div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let editingId = null;
+        firebase.auth().onAuthStateChanged(u => { if(!u) window.location.href="login.html"; });
+
+        async function saveTerm() {
+            const en = document.getElementById('termEn').value.trim();
+            const ar = document.getElementById('termAr').value.trim();
+            const desc = document.getElementById('termDesc').value.trim();
+
+            if(!en || !ar) return alert("يرجى إدخال المصطلح وترجمته");
+
+            const data = { en, ar, desc, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+
+            try {
+                if(editingId) await db.collection("medical_terms").doc(editingId).update(data);
+                else await db.collection("medical_terms").add(data);
+                location.reload();
+            } catch(e) { alert("خطأ: " + e.message); }
+        }
+
+        window.onload = async function() {
+            const snap = await db.collection("medical_terms").orderBy("en", "asc").get();
+            document.getElementById('terms-list').innerHTML = snap.docs.map(doc => `
+                <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333; align-items:center;">
+                    <div>
+                        <strong style="color:var(--orange);">${doc.data().en}</strong> - <span>${doc.data().ar}</span>
+                    </div>
+                    <div>
+                        <button onclick="editTerm('${doc.id}')" style="color:var(--yellow); background:none; border:none; cursor:pointer;">تعديل</button>
+                        <button onclick="deleteTerm('${doc.id}')" style="color:red; background:none; border:none; cursor:pointer; margin-right:10px;">حذف</button>
+                    </div>
+                </div>`).join('');
+        };
+
+        async function editTerm(id) {
+            editingId = id;
+            const doc = await db.collection("medical_terms").doc(id).get();
+            const d = doc.data();
+            document.getElementById('termEn').value = d.en;
+            document.getElementById('termAr').value = d.ar;
+            document.getElementById('termDesc').value = d.desc;
+            document.getElementById('form-title').innerText = "تعديل المصطلح";
+            document.getElementById('edit-indicator').style.display="block";
+            document.getElementById('cancel-btn').style.display="block";
+            window.scrollTo(0,0);
+        }
+
+        async function deleteTerm(id) { if(confirm("حذف المصطلح؟")) { await db.collection("medical_terms").doc(id).delete(); location.reload(); } }
+    </script>
+</body>
+</html>

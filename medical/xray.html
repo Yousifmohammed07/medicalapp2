@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <title>دروس الأشعة - كاميرا طبية</title>
+    <style>
+        .lessons-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
+        
+        /* إعادة التصميم القديم للبطاقات */
+        .lesson-card { 
+            background: var(--card-bg); 
+            border: 1px solid var(--orange); 
+            border-radius: 15px; 
+            padding: 25px; 
+            cursor: pointer; 
+            transition: 0.3s;
+            text-align: center;
+        }
+        .lesson-card:hover { transform: translateY(-5px); border-color: var(--yellow); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .lesson-card h3 { color: var(--yellow); margin-bottom: 10px; }
+        .lesson-card p { color: #aaa; font-size: 0.9rem; }
+
+        .modal { display: none; position: fixed; z-index: 3000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); overflow-y: auto; }
+        .modal-content { background: #0a192f; margin: 5% auto; padding: 30px; width: 90%; max-width: 800px; border-radius: 15px; border: 1px solid var(--orange); }
+        .close-btn { float: left; font-size: 30px; cursor: pointer; color: var(--orange); }
+        .text-block { line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">كاميرا طبية 📷</a>
+        <div class="dropdown">
+            <button onclick="toggleMenu()" class="dropbtn">القائمة ☰</button>
+            <div id="myDropdown" class="dropdown-content">
+                <a href="index.html">الرئيسية</a>
+                <a href="xray.html">X-ray</a>
+                <a href="ct.html">CT Scan</a>
+                <a href="mri.html">MRI</a>
+                <a href="protection.html">الوقاية الإشعاعية</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 style="text-align:center; color:var(--yellow); margin-top:20px;">⚛️ دروس الفيزياء الإشعاعية</h1>
+        <div id="lessonsContainer" class="lessons-grid"></div>
+    </div>
+
+    <div id="lessonModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeLesson()">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        function toggleMenu() { document.getElementById("myDropdown").classList.toggle("show"); }
+
+        // دالة استخراج الرقم للترتيب
+        function getDocNumber(title) {
+            const match = title.match(/\d+/);
+            return match ? parseInt(match[0], 10) : 999;
+        }
+
+        window.onload = async function() {
+            const container = document.getElementById('lessonsContainer');
+            const snap = await db.collection("xray_lessons").get();
+            
+            // ترتيب الدروس رقمياً
+            const sorted = snap.docs.sort((a,b) => getDocNumber(a.data().titleAr) - getDocNumber(b.data().titleAr));
+
+            sorted.forEach(doc => {
+                const lesson = doc.data();
+                container.innerHTML += `
+                    <div class="lesson-card" onclick="openLesson('${doc.id}')">
+                        <h3>${lesson.titleAr}</h3>
+                        <p>${lesson.titleEn}</p>
+                    </div>`;
+            });
+        };
+
+        async function openLesson(id) {
+            const doc = await db.collection("xray_lessons").doc(id).get();
+            const lesson = doc.data();
+            let html = `<h2 style="color:var(--yellow);">${lesson.titleAr}</h2><hr style="border:0.1px solid #333; margin-bottom:20px;">`;
+            lesson.content.forEach(b => {
+                if(b.type==='text') html += `<div class="text-block">${b.value}</div>`;
+                else html += `<img src="${b.value}" style="width:100%; border-radius:10px; margin:15px 0; border:1px solid var(--orange);">`;
+            });
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('lessonModal').style.display = "block";
+            if(window.MathJax) MathJax.typeset();
+        }
+
+        function closeLesson() { document.getElementById('lessonModal').style.display = "none"; }
+        
+        window.onclick = function(e) {
+            if (e.target == document.getElementById('lessonModal')) closeLesson();
+            if (!e.target.matches('.dropbtn')) {
+                const drops = document.getElementsByClassName("dropdown-content");
+                for (let d of drops) if (d.classList.contains('show')) d.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>

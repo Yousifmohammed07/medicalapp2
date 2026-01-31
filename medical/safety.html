@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>تحدي السلامة الإشعاعية والمغناطيسية - كاميرا طبية</title>
+    <style>
+        .safety-header { text-align: center; padding: 30px; background: var(--card-bg); border-bottom: 2px solid var(--orange); }
+        .filter-container { display: flex; justify-content: center; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+        .filter-btn { 
+            padding: 10px 20px; border-radius: 20px; border: 1px solid var(--orange); 
+            background: transparent; color: white; cursor: pointer; transition: 0.3s;
+        }
+        .filter-btn.active { background: var(--orange); color: var(--navy); font-weight: bold; }
+
+        .challenge-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .safety-card { background: var(--card-bg); border-radius: 20px; padding: 25px; text-align: center; border: 2px solid var(--yellow); }
+        .safety-img { width: 100%; max-height: 300px; object-fit: contain; border-radius: 15px; margin-bottom: 20px; background: #000; padding: 10px; }
+        
+        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .btn-safe { background: #27ae60; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .btn-unsafe { background: #c0392b; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .btn-conditional { background: var(--yellow); color: var(--navy); border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; grid-column: span 2; }
+
+        .feedback-box { display: none; margin-top: 20px; padding: 20px; border-radius: 15px; line-height: 1.6; text-align: right; }
+        #loading-text { text-align: center; color: var(--orange); display: none; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="logo">كاميرا طبية 📷</a>
+        <div class="dropdown">
+            <button onclick="toggleMenu()" class="dropbtn">القائمة ☰</button>
+            <div id="myDropdown" class="dropdown-content">
+                <a href="index.html">الرئيسية</a>
+                <a href="safety.html">تحدي السلامة</a>
+                <a href="atlas.html">أطلس الوضعيات</a>
+                <a href="xray.html">دروس الأشعة</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="safety-header">
+        <h1 style="color:var(--yellow)">🛡️ تحدي السلامة المهنية</h1>
+        <p>حدد الأجسام الآمنة بناءً على معايير الوقاية الدولية</p>
+    </div>
+
+    <div class="filter-container">
+        <button class="filter-btn active" onclick="setDevice('All', this)">الكل</button>
+        <button class="filter-btn" onclick="setDevice('MRI', this)">الرنين (MRI)</button>
+        <button class="filter-btn" onclick="setDevice('CT', this)">المفراس (CT)</button>
+        <button class="filter-btn" onclick="setDevice('X-ray', this)">الأشعة (X-ray)</button>
+    </div>
+
+    <div class="challenge-container">
+        <div id="loading-text">جاري جلب التحديات من السحاب...</div>
+        <div id="game-area">
+            <div class="card" style="text-align:center;">
+                <h3>ابدأ الاختبار الآن</h3>
+                <p>سيتم تحميل التحديات التي أضفتها في لوحة الإدارة</p>
+                <button id="start-btn" class="btn-primary" onclick="loadNextChallenge()">بدء التحدي 🚀</button>
+             </div>
+        </div>
+
+        <div id="feedback" class="feedback-box"></div>
+        <button id="next-btn" class="btn-primary" style="display:none; margin-top:10px;" onclick="loadNextChallenge()">التحدي التالي ➡️</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let currentDevice = 'All';
+        let allChallenges = [];
+        let currentChallenge = null;
+        const COLLECTION = "safety"; // اسم المجموعة في Firebase
+
+        function toggleMenu() { document.getElementById("myDropdown").classList.toggle("show"); }
+
+        // جلب البيانات من Firebase عند فتح الصفحة
+        window.onload = async function() {
+            const loading = document.getElementById('loading-text');
+            loading.style.display = "block";
+            try {
+                const snap = await db.collection(COLLECTION).get();
+                allChallenges = snap.docs.map(doc => doc.data());
+                loading.style.display = "none";
+                console.log("تم تحميل التحديات:", allChallenges.length);
+            } catch (e) {
+                loading.innerText = "خطأ في الاتصال بقاعدة البيانات";
+                console.error(e);
+            }
+        };
+
+        function setDevice(device, btn) {
+            currentDevice = device;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadNextChallenge();
+        }
+
+        function loadNextChallenge() {
+            let pool = (currentDevice === 'All') ? allChallenges : allChallenges.filter(c => c.device === currentDevice);
+
+            if (pool.length === 0) {
+                document.getElementById('game-area').innerHTML = `
+                    <div class="card" style="text-align:center;">
+                        <p>لا توجد تحديات مضافة في قسم <b>${currentDevice}</b> حالياً.</p>
+                        <p style="font-size:0.8rem; color:gray;">أضف تحديات من لوحة الإدارة لتظهر هنا.</p>
+                    </div>`;
+                return;
+            }
+
+            currentChallenge = pool[Math.floor(Math.random() * pool.length)];
+            
+            const gameArea = document.getElementById('game-area');
+            gameArea.innerHTML = `
+                <div class="safety-card">
+                    <span style="background:var(--orange); color:black; padding:2px 10px; border-radius:5px; font-size:0.8rem; float:left;">${currentChallenge.device}</span>
+                    <h3 style="margin-top:20px;">${currentChallenge.item || currentChallenge.title}</h3>
+                    <img src="${currentChallenge.img || currentChallenge.image}" class="safety-img">
+                    <p>ما هو تصنيف السلامة لهذا الجسم؟</p>
+                    
+                    <div class="action-btns">
+                        <button class="btn-safe" onclick="checkSafety('safe')">✅ آمن</button>
+                        <button class="btn-unsafe" onclick="checkSafety('unsafe')">❌ خطر</button>
+                        <button class="btn-conditional" onclick="checkSafety('conditional')">⚠️ مسموح بشرط</button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('feedback').style.display = "none";
+            document.getElementById('next-btn').style.display = "none";
+        }
+
+        function checkSafety(userChoice) {
+            const feedback = document.getElementById('feedback');
+            feedback.style.display = "block";
+            document.getElementById('next-btn').style.display = "block";
+
+            // تحديد الحالة الصحيحة من البيانات
+            const correctStatus = currentChallenge.status || currentChallenge.correctAnswer;
+
+            if (userChoice === correctStatus) {
+                feedback.style.background = "rgba(39, 174, 150, 0.2)";
+                feedback.style.border = "1px solid #27ae60";
+                feedback.innerHTML = `<h3 style="color:#27ae60; margin-top:0;">✔️ أحسنت، قرار صحيح!</h3><p>${currentChallenge.explanation || currentChallenge.desc}</p>`;
+            } else {
+                feedback.style.background = "rgba(192, 57, 43, 0.2)";
+                feedback.style.border = "1px solid #c0392b";
+                const statusMap = { 'safe': 'آمن', 'unsafe': 'غير آمن/خطر', 'conditional': 'مسموح بشرط' };
+                feedback.innerHTML = `
+                    <h3 style="color:#e74c3c; margin-top:0;">❌ للأسف، إجابة خاطئة</h3>
+                    <p>التصنيف الصحيح هو: <b>${statusMap[correctStatus]}</b></p>
+                    <p>${currentChallenge.explanation || currentChallenge.desc}</p>`;
+            }
+            
+            document.querySelector('.action-btns').style.opacity = "0.3";
+            document.querySelector('.action-btns').style.pointerEvents = "none";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>أطلس الوضعيات - كاميرا طبية</title>
+    <style>
+        /* تنسيق اللوجو في الناف بار */
+        .nav-content { display: flex; align-items: center; gap: 10px; }
+        .app-logo { height: 45px; width: auto; border-radius: 8px; }
+        
+        .atlas-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
+        
+        /* تصميم بطاقات المجموعات مع دعم الصور */
+        .group-card { 
+            background: #0a1120; border-radius: 20px; padding: 25px; text-align: center; 
+            border: 1px solid rgba(255, 215, 0, 0.1); cursor: pointer; transition: 0.3s;
+        }
+        .group-card:hover { transform: translateY(-5px); border-color: var(--orange); }
+        
+        /* تنسيق صورة المجموعة */
+        .group-visual { 
+            width: 100px; height: 100px; object-fit: cover; 
+            border-radius: 50%; border: 2px solid var(--orange); 
+            margin-bottom: 15px; 
+        }
+        .group-icon-large { font-size: 3.5rem; display: block; margin-bottom: 15px; }
+
+        .loader-mini { border: 3px solid #f3f3f3; border-top: 3px solid var(--orange); border-radius: 50%; width: 25px; height: 25px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .modal { display: none; position: fixed; z-index: 5000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); overflow-y: auto; }
+        .modal-content { background: #0a1120; margin: 5% auto; padding: 25px; border-radius: 20px; max-width: 700px; border: 1px solid var(--orange); position: relative; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <img src="logo.png" alt="لوغو" class="app-logo">
+            <a href="index.html" class="logo">كاميرا طبية</a>
+        </div>
+        <button id="back-btn" class="btn-primary" style="display:none; width:auto; padding: 5px 15px;" onclick="location.reload()">⬅️ عودة</button>
+    </nav>
+
+    <div class="container">
+        <h1 id="main-title" style="text-align:center; color:var(--yellow); margin-top:20px;">وضعيات التصوير الطبي🩻</h1>
+        <div id="atlasContainer" class="atlas-grid">
+            <p style="text-align:center; grid-column:1/-1;">جاري تحميل المجموعات...</p>
+        </div>
+    </div>
+
+    <div id="posModal" class="modal">
+        <div class="modal-content">
+             <span onclick="document.getElementById('posModal').style.display='none'" style="position:absolute; left:20px; top:10px; cursor:pointer; font-size:2.5rem; color:red;">&times;</span>
+             <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const GROUPS_COL = "atlas_groups";
+        const POS_COL = "custom_atlas";
+
+        // تحميل المجموعات مع استرجاع ميزة الصور
+        async function loadGroups() {
+            try {
+                const snap = await db.collection(GROUPS_COL).orderBy("createdAt", "asc").get();
+                const grid = document.getElementById('atlasContainer');
+                
+                grid.innerHTML = snap.docs.map(doc => {
+                    const g = doc.data();
+                    return `
+                    <div class="group-card" onclick="loadPositions('${doc.id}', '${g.title}')">
+                        ${g.img ? `<img src="${g.img}" class="group-visual">` : `<span class="group-icon-large">${g.icon || '📁'}</span>`}
+                        <h2 style="color:var(--yellow)">${g.title}</h2>
+                    </div>`;
+                }).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadPositions(groupId, title) {
+            document.getElementById('main-title').innerText = "📍 " + title;
+            document.getElementById('back-btn').style.display = "block";
+            const grid = document.getElementById('atlasContainer');
+            grid.innerHTML = "<p style='grid-column:1/-1; text-align:center;'>جاري جلب القائمة...</p>";
+
+            const snap = await db.collection(POS_COL).where("groupId", "==", groupId).get();
+            grid.innerHTML = snap.docs.map(doc => `
+                <div class="group-card" style="padding:15px;" onclick="openDetails('${doc.id}')">
+                    <h3 style="color:white;">${doc.data().title}</h3>
+                    <small style="color:var(--orange)">عرض التفاصيل 🔎</small>
+                </div>
+            `).join('');
+        }
+
+        async function openDetails(id) {
+            const modal = document.getElementById('posModal');
+            const body = document.getElementById('modalBody');
+            modal.style.display = "block";
+            body.innerHTML = "<div style='text-align:center; padding:50px;'><div class='loader-mini'></div> جاري تحميل الصورة...</div>";
+
+            const doc = await db.collection(POS_COL).doc(id).get();
+            const p = doc.data();
+
+            body.innerHTML = `
+                <h2 style="color:var(--yellow); text-align:center; margin-top:20px;">${p.title}</h2>
+                <img src="${p.img}" style="width:100%; border-radius:15px; margin:15px 0; border:2px solid #333; background:#000;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:rgba(255,255,255,0.05); padding:15px; border-radius:10px;">
+                    <div><b style="color:var(--orange)">CR:</b> ${p.cr || '---'}</div>
+                    <div><b style="color:var(--orange)">SID:</b> ${p.sid || '---'}</div>
+                    <div><b style="color:var(--orange)">Factors:</b> ${p.factors || '---'}</div>
+                    <div><b style="color:var(--orange)">IR:</b> ${p.ir || '---'}</div>
+                </div>
+                <p style="margin-top:15px;"><b style="color:var(--yellow)">التموضع:</b><br>${p.instr || '---'}</p>
+                <p style="margin-top:10px;"><b style="color:var(--yellow)">معايير الجودة:</b><br>${p.criteria || '---'}</p>
+            `;
+        }
+
+        window.onload = loadGroups;
+    </script>
+</body>
+</html>

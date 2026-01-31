@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <title>إدارة الدروس - كاميرا طبية</title>
+    <style>
+        .block-tool { border: 1px dashed var(--orange); padding: 15px; margin-bottom: 10px; border-radius: 10px; position: relative; }
+        .remove-block { position: absolute; left: 10px; top: 10px; color: #ff4d4d; cursor: pointer; border: none; background: none; font-weight: bold; }
+        .btn-add { background: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px; }
+        .img-preview { width: 150px; display: none; margin-top: 10px; border-radius: 8px; border: 1px solid var(--orange); }
+        .edit-badge { background: var(--yellow); color: var(--navy); padding: 2px 8px; border-radius: 5px; font-size: 0.7rem; display: none; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="admin_hub.html" class="logo">لوحة التحكم 🛠️</a>
+        <button class="btn-primary" onclick="location.href='admin_hub.html'" style="width:auto; padding: 5px 15px;">⬅️ العودة</button>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div id="edit-indicator" class="edit-badge">وضع التعديل نشط ✏️</div>
+            <h2 id="form-title" style="color:var(--orange);">📖 إضافة/تعديل درس</h2>
+            <input type="text" id="titleAr" placeholder="مثال: الدرس 1: عنوان الدرس" style="width:100%;">
+            <input type="text" id="titleEn" placeholder="Lesson Title (English)" dir="ltr" style="width:100%;">
+            <div id="blocks-container"></div>
+            <div style="margin-top:20px; text-align:center;">
+                <button class="btn-add" onclick="addTextBlock()">➕ نص</button>
+                <button class="btn-add" style="background:#2980b9;" onclick="addImageBlock()">📷 صورة</button>
+            </div>
+            <hr style="margin:20px 0; border:0.5px solid #444;">
+            <div style="display:flex; gap:10px;">
+                <button class="btn-primary" id="save-btn" onclick="saveFullLesson()">🚀 حفظ ونشر</button>
+                <button class="btn-primary" id="cancel-btn" style="background:#555; display:none;" onclick="location.reload()">إلغاء</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="color:var(--yellow);">📂 القائمة الحالية (مرتبة رقمياً)</h2>
+            <div id="lessons-list"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let editingId = null;
+        firebase.auth().onAuthStateChanged(u => { if(!u) window.location.href="login.html"; });
+
+        function addTextBlock(v="") {
+            const id = Date.now();
+            document.getElementById('blocks-container').insertAdjacentHTML('beforeend', `<div class="block-tool" id="block-${id}"><button class="remove-block" onclick="removeBlock(${id})">X</button><textarea class="block-data" data-type="text" rows="4" style="width:100%;">${v}</textarea></div>`);
+        }
+        function addImageBlock(s="") {
+            const id = Date.now();
+            document.getElementById('blocks-container').insertAdjacentHTML('beforeend', `<div class="block-tool" id="block-${id}"><button class="remove-block" onclick="removeBlock(${id})">X</button><input type="file" onchange="handleImg(event,${id})"><img id="preview-${id}" class="img-preview" src="${s}" style="${s?'display:block':''}"><input type="hidden" class="block-data" data-type="image" value="${s}"></div>`);
+        }
+        function handleImg(e,id) { const r=new FileReader(); r.onload=f=>{document.getElementById(`preview-${id}`).src=f.target.result; document.getElementById(`preview-${id}`).style.display="block"; document.querySelector(`#block-${id} .block-data`).value=f.target.result;}; r.readAsDataURL(e.target.files[0]); }
+        function removeBlock(id) { document.getElementById(`block-${id}`).remove(); }
+
+        // دالة استخراج الرقم للترتيب
+        function getDocNumber(title) {
+            const match = title.match(/\d+/);
+            return match ? parseInt(match[0], 10) : 999;
+        }
+
+        window.onload = async function() {
+            const snap = await db.collection("xray_lessons").get();
+            const sorted = snap.docs.sort((a,b) => getDocNumber(a.data().titleAr) - getDocNumber(b.data().titleAr));
+            document.getElementById('lessons-list').innerHTML = sorted.map(doc => `
+                <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
+                    <span>${doc.data().titleAr}</span>
+                    <div>
+                        <button onclick="editDoc('${doc.id}')" style="color:var(--yellow); background:none; border:none; cursor:pointer;">تعديل</button>
+                        <button onclick="deleteDoc('${doc.id}')" style="color:red; background:none; border:none; cursor:pointer; margin-right:10px;">حذف</button>
+                    </div>
+                </div>`).join('');
+        };
+
+        async function editDoc(id) {
+            editingId = id;
+            const doc = await db.collection("xray_lessons").doc(id).get();
+            const d = doc.data();
+            document.getElementById('titleAr').value = d.titleAr;
+            document.getElementById('titleEn').value = d.titleEn;
+            document.getElementById('edit-indicator').style.display="block";
+            document.getElementById('cancel-btn').style.display="block";
+            document.getElementById('blocks-container').innerHTML="";
+            d.content.forEach(b => b.type==='text'?addTextBlock(b.value):addImageBlock(b.value));
+            window.scrollTo(0,0);
+        }
+
+        async function saveFullLesson() {
+            const titleAr = document.getElementById('titleAr').value;
+            const titleEn = document.getElementById('titleEn').value;
+            const content = Array.from(document.querySelectorAll('.block-data')).map(el => ({type: el.dataset.type, value: el.value}));
+            if(!titleAr || content.length===0) return alert("أكمل البيانات");
+            const data = { titleAr, titleEn, content, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+            if(editingId) await db.collection("xray_lessons").doc(editingId).update(data);
+            else { data.createdAt = firebase.firestore.FieldValue.serverTimestamp(); await db.collection("xray_lessons").add(data); }
+            location.reload();
+        }
+
+        async function deleteDoc(id) { if(confirm("حذف؟")) { await db.collection("xray_lessons").doc(id).delete(); location.reload(); } }
+    </script>
+</body>
+</html>
